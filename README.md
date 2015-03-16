@@ -3,7 +3,7 @@
 <p>XpressionMapper leverages AutoMapper to transform business model expressions into data model expressions.  Expression mapping provides a couple of advantages.
 <ol class="list">
             <li>Improved separation of concerns:  The Entity Framework (or other ORM) layer has no knowledge of the business model.</li>
-            <li>Removes the need for projection in the data layer or returning a IQueryable from the data layer.</li>
+            <li>Removes the need for projection in the data layer or to return an IQueryable from the data layer.</li>
         </ol>
 </p>
 <h2 id="how-it-works-">How it works?</h2>
