@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>Read_Me.md</title><style></style></head><body>
+<html><head><meta charset="utf-8"><style></style></head><body>
 <h3 id="what-is-xpressionmapper-">What is XpressionMapper?</h3>
 <p>XpressionMapper leverages AutoMapper to transform business model expressions into data model expressions.</p>
 <h1 id="how-it-works-">How it works?</h1>
