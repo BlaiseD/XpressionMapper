@@ -27,8 +27,8 @@ namespace AWSample.PersonService
 
         public ICollection<PersonModel> GetList(Expression<Func<PersonModel, bool>> filter = null, Expression<Func<IQueryable<PersonModel>, IQueryable<PersonModel>>> orderBy = null, ICollection<Expression<Func<PersonModel, object>>> includeProperties = null)
         {
-            ICollection<PersonModel> changes = repository.GetList(filter, orderBy, includeProperties);
-            return changes.ToList();
+            ICollection<PersonModel> list = repository.GetList(filter, orderBy, includeProperties);
+            return list.ToList();
         }
 
         public int Count(System.Linq.Expressions.Expression<Func<Domain.Person.PersonModel, bool>> filter = null)
