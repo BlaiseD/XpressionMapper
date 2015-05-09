@@ -97,6 +97,12 @@ namespace XpressionMapper
                 if (constantExpression.Value == null)
                     return base.VisitBinary(node.Update(Expression.Constant(null), node.Conversion, node.Right));
             }
+
+            Expression newLeft = this.Visit(node.Left);
+            Expression newRight = this.Visit(node.Right);
+            if ((newLeft.Type.IsGenericType && newLeft.Type.GetGenericTypeDefinition().Equals(typeof(Nullable<>))) ^ (newRight.Type.IsGenericType && newRight.Type.GetGenericTypeDefinition().Equals(typeof(Nullable<>))))
+                throw new ArgumentException(string.Format(CultureInfo.CurrentCulture, Properties.Resources.cannotCreateBinaryExpressionFormat, newLeft.ToString(), newLeft.Type.Name, newRight.ToString(), newRight.Type.Name));
+
             return base.VisitBinary(node);
         }
 
@@ -162,6 +168,17 @@ namespace XpressionMapper
             if (sourceFullName.IndexOf(PERIOD) < 0)
             {
                 PropertyMap propertyMap = typeMap.GetPropertyMaps().SingleOrDefault(item => item.DestinationProperty.Name == sourceFullName);
+                if (propertyMap.CustomExpression != null)
+                {
+                    if (propertyMap.CustomExpression.ReturnType.IsValueType && typeSource.GetProperty(propertyMap.DestinationProperty.Name).PropertyType != propertyMap.CustomExpression.ReturnType)
+                        throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Properties.Resources.expressionMapValueTypeMustMatchFormat, propertyMap.CustomExpression.ReturnType.Name, propertyMap.CustomExpression.ToString(), typeSource.GetProperty(propertyMap.DestinationProperty.Name).PropertyType.Name, propertyMap.DestinationProperty.Name));
+                }
+                else
+                {
+                    if (((PropertyInfo)propertyMap.SourceMember).PropertyType.IsValueType && typeSource.GetProperty(propertyMap.DestinationProperty.Name).PropertyType != ((PropertyInfo)propertyMap.SourceMember).PropertyType)
+                        throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, Properties.Resources.expressionMapValueTypeMustMatchFormat, ((PropertyInfo)propertyMap.SourceMember).PropertyType.Name, propertyMap.SourceMember.Name, typeSource.GetProperty(propertyMap.DestinationProperty.Name).PropertyType.Name, propertyMap.DestinationProperty.Name));
+                }
+
                 propertyMapInfoList.Add(new PropertyMapInfo(propertyMap.CustomExpression, propertyMap.SourceMember));
             }
             else
