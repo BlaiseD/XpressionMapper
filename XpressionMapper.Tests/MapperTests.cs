@@ -141,6 +141,24 @@ namespace XpressionMapper.Tests
         }
 
         [TestMethod]
+        public void Map_where_method()
+        {
+            //Arrange
+            Expression<Func<UserModel, object>> selection = s => s.AccountModel.ThingModels.Where(x => x.BarModel == s.AccountName);
+            Dictionary<Type, MapperInfo> infoDictionary = new List<MapperInfo>
+            {
+                selection.CreateMapperInfo<UserModel, User>("p"),//mapping for outer expression must come first
+                selection.CreateMapperInfo<ThingModel, Thing>("q")
+            }.ToDictionary(i => i.SourceType);
+
+            //Act
+            Expression<Func<User, object>> selectionMapped = selection.MapExpression<User, object>(infoDictionary);
+
+            //Assert
+            Assert.IsNotNull(selectionMapped);
+        }
+
+        [TestMethod]
         public void Map_orderBy_thenBy_expression()
         {
             //Arrange

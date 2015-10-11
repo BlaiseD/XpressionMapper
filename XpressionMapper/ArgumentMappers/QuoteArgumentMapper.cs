@@ -22,7 +22,7 @@ namespace XpressionMapper.ArgumentMappers
                 Expression exp = ((LambdaExpression)((UnaryExpression)this.argument).Operand).Body;
                 Expression ex = this.ExpressionVisitor.Visit(exp);
 
-                Type parameterType = exp.GetParameterType();
+                Type parameterType = this.argument.GetParameterType();
                 LambdaExpression mapped = Expression.Lambda(ex, this.ExpressionVisitor.InfoDictionary[parameterType].NewParameter);
 
                 return Expression.Quote(mapped);

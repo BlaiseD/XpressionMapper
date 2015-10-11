@@ -66,6 +66,38 @@ namespace XpressionMapper.Extensions
             throw new InvalidOperationException(Properties.Resources.invalidExpErr);
         }
 
+        private static MemberExpression GetMemberExpression(LambdaExpression expr)
+        {
+            MemberExpression me;
+            switch (expr.Body.NodeType)
+            {
+                case ExpressionType.Convert:
+                case ExpressionType.ConvertChecked:
+                    var ue = expr.Body as UnaryExpression;
+                    me = ((ue != null) ? ue.Operand : null) as MemberExpression;
+                    break;
+                default:
+                    me = expr.Body as MemberExpression;
+                    if (me == null)
+                    {
+                        var binaryExpression = expr.Body as BinaryExpression;
+                        if (binaryExpression != null)
+                        {
+                            MemberExpression left = binaryExpression.Left as MemberExpression;
+                            if (left != null)
+                                return left;
+                            MemberExpression right = binaryExpression.Right as MemberExpression;
+                            if (right != null)
+                                return right;
+                        }
+                    }
+                    break;
+            }
+
+            return me;
+        }
+ 
+
         /// <summary>
         /// Returns the Systen.Type for the LINQ parameter.
         /// </summary>
@@ -79,6 +111,16 @@ namespace XpressionMapper.Extensions
             //the node represents parameter of the expression
             if (expression.NodeType == ExpressionType.Parameter)
                 return expression.Type;
+
+            if (expression.NodeType == ExpressionType.Quote)
+            {
+                return GetParameterType(GetMemberExpression((LambdaExpression)((UnaryExpression)expression).Operand));
+            }
+
+            if (expression.NodeType == ExpressionType.Lambda)
+            {
+                return GetParameterType(GetMemberExpression((LambdaExpression)expression));
+            }
 
             if (expression.NodeType == ExpressionType.MemberAccess)
             {
