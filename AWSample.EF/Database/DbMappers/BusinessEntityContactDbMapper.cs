@@ -31,33 +31,20 @@ namespace AWSample.EF.Database.DbMappers
             if (entities == null)
                 return;
 
-            const string PIPE = "|";
-            List<string> queryItems = entities.ToList().ConvertAll<string>(item => string.Concat(item.BusinessEntityID.ToString(), PIPE, item.PersonID.ToString(), PIPE, item.ContactTypeID.ToString()));
-            Dictionary<string, BusinessEntityContact> existingEntities = unitOfWork.BusinessEntityContactRepository.Get(bec => queryItems.Contains(string.Concat(bec.BusinessEntityID.ToString(), PIPE, bec.PersonID.ToString(), PIPE, bec.ContactTypeID.ToString())))
-                .ToDictionary(item => string.Concat(item.BusinessEntityID.ToString(), PIPE, item.PersonID.ToString(), PIPE, item.ContactTypeID.ToString()));
-
             foreach (BusinessEntityContact bec in entities)
             {
-                string key = string.Concat(bec.BusinessEntityID.ToString(), PIPE, bec.PersonID.ToString(), PIPE, bec.ContactTypeID.ToString());
                 switch (bec.EntityState)
                 {
                     case AWSample.EF.POCO.EntityStateType.Deleted:
-                        if (existingEntities.ContainsKey(key))
-                            this.unitOfWork.BusinessEntityContactRepository.Delete(existingEntities[key]);
+                        this.unitOfWork.BusinessEntityContactRepository.Delete(bec);
                         break;
                     case AWSample.EF.POCO.EntityStateType.Added:
                         this.unitOfWork.BusinessEntityContactRepository.Insert(bec);
                         break;
-                    default:
-                        if (!existingEntities.ContainsKey(key))
-                        {
-                            this.unitOfWork.BusinessEntityContactRepository.Insert(bec);
-                        }
-                        else
-                        {
-                            this.unitOfWork.Context.Entry(existingEntities[key]).CurrentValues.SetValues(bec);
-                            this.unitOfWork.BusinessEntityContactRepository.Update(existingEntities[key]);
-                        }
+                    case AWSample.EF.POCO.EntityStateType.Modified:
+                        this.unitOfWork.BusinessEntityContactRepository.Update(bec);
+                        break;
+                    case AWSample.EF.POCO.EntityStateType.Unchanged:
                         break;
                 }
             }
