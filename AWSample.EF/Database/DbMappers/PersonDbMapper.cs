@@ -31,30 +31,20 @@ namespace AWSample.EF.Database.DbMappers
             if (entities == null)
                 return;
 
-            int[] ids = entities.Select(item => item.BusinessEntityID).ToArray();
-            Dictionary<int, AWSample.EF.POCO.Person.Person> existingEntities = unitOfWork.PersonRepository.Get(person => ids.Contains(person.BusinessEntityID)).ToDictionary(item => item.BusinessEntityID);
-
             foreach (AWSample.EF.POCO.Person.Person person in entities)
             {
                 switch (person.EntityState)
                 {
                     case AWSample.EF.POCO.EntityStateType.Deleted:
-                        if (existingEntities.ContainsKey(person.BusinessEntityID))
-                            this.unitOfWork.PersonRepository.Delete(existingEntities[person.BusinessEntityID]);
+                        this.unitOfWork.PersonRepository.Delete(person);
                         break;
                     case AWSample.EF.POCO.EntityStateType.Added:
                         this.unitOfWork.PersonRepository.Insert(person);
                         break;
-                    default:
-                        if (!existingEntities.ContainsKey(person.BusinessEntityID))
-                        {
-                            this.unitOfWork.PersonRepository.Insert(person);
-                        }
-                        else
-                        {
-                            this.unitOfWork.Context.Entry(existingEntities[person.BusinessEntityID]).CurrentValues.SetValues(person);
-                            unitOfWork.PersonRepository.Update(existingEntities[person.BusinessEntityID]);
-                        }
+                    case AWSample.EF.POCO.EntityStateType.Modified:
+                        unitOfWork.PersonRepository.Update(person);
+                        break;
+                    case AWSample.EF.POCO.EntityStateType.Unchanged:
                         break;
                 }
             }
@@ -65,31 +55,21 @@ namespace AWSample.EF.Database.DbMappers
             if (entities == null)
                 return;
 
-            int[] userIds = entities.Select(item => item.BusinessEntityID).ToArray();
-            Dictionary<int, AWSample.EF.POCO.Person.Person> existingEntities = unitOfWork.PersonRepository.Get(user => userIds.Contains(user.BusinessEntityID)).ToDictionary(item => item.BusinessEntityID);
-
             foreach (AWSample.EF.POCO.Person.Person person in entities)
             {
                 switch (person.EntityState)
                 {
                     case AWSample.EF.POCO.EntityStateType.Deleted:
-                        if (existingEntities.ContainsKey(person.BusinessEntityID))
-                            this.unitOfWork.PersonRepository.Delete(existingEntities[person.BusinessEntityID]);
+                        this.unitOfWork.PersonRepository.Delete(person);
                         break;
                     case AWSample.EF.POCO.EntityStateType.Added:
                         this.unitOfWork.PersonRepository.InsertGraph(person);
                         break;
-                    default:
-                        if (!existingEntities.ContainsKey(person.BusinessEntityID))
-                        {
-                            this.unitOfWork.PersonRepository.InsertGraph(person);
-                        }
-                        else
-                        {
-                            this.unitOfWork.Context.Entry(existingEntities[person.BusinessEntityID]).CurrentValues.SetValues(person);
-                            new BusinessEntityContactDbMapper(unitOfWork).Save(person.BusinessEntityContacts);
-                            unitOfWork.PersonRepository.Update(existingEntities[person.BusinessEntityID]);
-                        }
+                    case AWSample.EF.POCO.EntityStateType.Modified:
+                        new BusinessEntityContactDbMapper(unitOfWork).Save(person.BusinessEntityContacts);
+                        unitOfWork.PersonRepository.Update(person);
+                        break;
+                    case AWSample.EF.POCO.EntityStateType.Unchanged:
                         break;
                 }
             }
