@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AWSample.Domain.Person
 {
-    public class PersonModel
+    public class PersonModel : BaseModel
     {
         public PersonModel()
         {
