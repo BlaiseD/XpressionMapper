@@ -43,7 +43,11 @@ namespace AWSample.IntegrationTests
             foreach(BusinessEntityContactModel bcm in person.BusinessEntityContacts)
             {
                 bcm.ModifiedDate = new DateTime(2014, 12, 12);
+                bcm.EntityState = Domain.EntityStateType.Modified;
             }
+            
+            if (person.BusinessEntityContacts.Count > 0)
+                person.EntityState = Domain.EntityStateType.Modified;
 
             service.UpdateBusinessContacts(person);
             person = service.GetList(item => item.BusinessEntityID == 1521, null, new List<Expression<Func<PersonModel, object>>>() { item => item.BusinessEntityContacts }).SingleOrDefault();
