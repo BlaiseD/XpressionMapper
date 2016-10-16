@@ -41,6 +41,7 @@ namespace AWSample.PersonService
             PersonModel fromDataBase = repository.GetList(item => item.BusinessEntityID == entity.BusinessEntityID).SingleOrDefault();
             fromDataBase.EmailPromotion = entity.EmailPromotion;
             fromDataBase.PersonType = entity.PersonType;
+            fromDataBase.EntityState = Domain.EntityStateType.Modified;
 
             repository.Save(fromDataBase);
             //If you're sure entity includes all required fields simply call repository.Save(entity);
@@ -49,7 +50,7 @@ namespace AWSample.PersonService
         public void UpdateBusinessContacts(PersonModel entity)
         {
             PersonModel fromDataBase = repository.GetList(item => item.BusinessEntityID == entity.BusinessEntityID, null, new List<Expression<Func<PersonModel, object>>>() { item => item.BusinessEntityContacts }).SingleOrDefault();
-
+            fromDataBase.EntityState = entity.EntityState;
             foreach (BusinessEntityContactModel bcmFromDb in fromDataBase.BusinessEntityContacts)
             {
                 BusinessEntityContactModel bcmEntity = entity.BusinessEntityContacts.Where(item => item.BusinessEntityID == bcmFromDb.BusinessEntityID
@@ -57,7 +58,10 @@ namespace AWSample.PersonService
                     && item.PersonID == bcmFromDb.PersonID).SingleOrDefault();
 
                 if (bcmEntity != null)
+                {
                     bcmFromDb.ModifiedDate = bcmEntity.ModifiedDate;
+                    bcmFromDb.EntityState = Domain.EntityStateType.Modified;
+                }
             }
 
             repository.SaveGraph(fromDataBase);
