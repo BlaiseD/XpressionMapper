@@ -108,30 +108,37 @@ namespace XpressionMapper
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            if (node.Object != null)//not necessary to map instance methods - in fact mapping instance methods causes problems
-                return base.VisitMethodCall(node);
-
             Type sType = node.GetParameterType();
             if (sType == null || !infoDictionary.ContainsKey(sType))
                 return base.VisitMethodCall(node);
 
-            //if (node.Object != null)//not necessary to map instance methods - in fact it mapping instance methods causes problems
-                //return base.VisitMethodCall(node);
-
-            List<Expression> listOfExpressionArgumentsForNewMethod = new List<Expression>();//e.g. s => s.UserId.  node.Arguments[0] is usually the helper object itself
-
-            for (int i = 0; i < node.Arguments.Count; i++)
+            List<Expression> listOfArgumentsForNewMethod = node.Arguments.Aggregate(new List<Expression>(), (lst, next) =>
             {
-                ArgumentMapper argumentMapper = ArgumentMapper.Create(this, node.Arguments[i]);
-                listOfExpressionArgumentsForNewMethod.Add(argumentMapper.MappedArgumentExpression);
-            }
+                lst.Add(ArgumentMapper.Create(this, next).MappedArgumentExpression);
+                return lst;
+            });//Arguments could be expressions or other objects. e.g. s => s.UserId  or a string "ZZZ".  For extention methods node.Arguments[0] is usually the helper object itself
 
             //type args are the generic type args e.g. T1 and T2 MethodName<T1, T2>(method arguments);
             List<Type> typeArgsForNewMethod = node.Method.IsGenericMethod
                 ? node.Method.GetGenericArguments().ToList().ConvertAll<Type>(i => infoDictionary.ContainsKey(i) ? infoDictionary[i].DestType : i)//not converting the type it is not in the info dictionary
                 : null;
 
-            MethodCallExpression resultExp = Expression.Call(node.Method.DeclaringType, node.Method.Name, typeArgsForNewMethod == null ? null : typeArgsForNewMethod.ToArray(), listOfExpressionArgumentsForNewMethod.ToArray());
+            MethodCallExpression resultExp = null;
+            if (!node.Method.IsStatic)
+            {
+                Expression instance = ArgumentMapper.Create(this, node.Object).MappedArgumentExpression;
+
+                resultExp = node.Method.IsGenericMethod
+                    ? Expression.Call(instance, node.Method.Name, typeArgsForNewMethod.ToArray(), listOfArgumentsForNewMethod.ToArray())
+                    : Expression.Call(instance, node.Method, listOfArgumentsForNewMethod.ToArray());
+            }
+            else
+            {
+                resultExp = node.Method.IsGenericMethod
+                    ? Expression.Call(node.Method.DeclaringType, node.Method.Name, typeArgsForNewMethod.ToArray(), listOfArgumentsForNewMethod.ToArray())
+                    : Expression.Call(node.Method, listOfArgumentsForNewMethod.ToArray());
+            }
+
             return resultExp;
         }
         #endregion Methods
