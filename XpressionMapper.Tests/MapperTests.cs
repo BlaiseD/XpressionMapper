@@ -30,7 +30,7 @@ namespace XpressionMapper.Tests
             }.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<User, bool>(infoDictionary);
+            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<UserModel, User, bool>(infoDictionary);
 
             //Assert
             Assert.IsNotNull(selectionMapped);
@@ -47,7 +47,7 @@ namespace XpressionMapper.Tests
             }.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<User, bool>(infoDictionary);
+            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<UserModel, User, bool>(infoDictionary);
 
             //Assert
             Assert.IsNotNull(selectionMapped);
@@ -64,7 +64,7 @@ namespace XpressionMapper.Tests
             }.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<User, bool>(infoDictionary);
+            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<UserModel, User, bool>(infoDictionary);
 
             //Assert
             Assert.IsNotNull(selectionMapped);
@@ -81,7 +81,7 @@ namespace XpressionMapper.Tests
             }.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<User, bool>(infoDictionary);
+            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<UserModel, User, bool>(infoDictionary);
 
             //Assert
             Assert.IsNotNull(selectionMapped);
@@ -92,13 +92,14 @@ namespace XpressionMapper.Tests
         {
             //Arrange
             Expression<Func<UserModel, bool>> selection = s => s != null && s.AccountModel.ComboName.StartsWith("A");
+            //Expression<Func<UserModel, bool>> selection = s => s != null && string.Concat(s.FullName, " ", "ZZZ").StartsWith("A");
             Dictionary<Type, MapperInfo> infoDictionary = new List<MapperInfo>
             {
                 selection.CreateMapperInfo<UserModel, User>("p")
             }.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<User, bool>(infoDictionary);
+            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<UserModel, User, bool>(infoDictionary);
 
             //Assert
             Assert.IsNotNull(selectionMapped);
@@ -116,7 +117,7 @@ namespace XpressionMapper.Tests
             }.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<User, bool>(infoDictionary);
+            Expression<Func<User, bool>> selectionMapped = selection.MapExpression<UserModel, User, bool>(infoDictionary);
 
             //Assert
             Assert.IsNotNull(selectionMapped);
@@ -129,17 +130,17 @@ namespace XpressionMapper.Tests
             Expression<Func<UserModel, object>> selection = s => s.AccountModel.ThingModels.Select(x => x.BarModel);
             Dictionary<Type, MapperInfo> infoDictionary = new List<MapperInfo>
             {
-                selection.CreateMapperInfo<UserModel, User>("p"),//mapping for outer expression must come first
+                selection.CreateMapperInfo<UserModel, User>("p"),
                 selection.CreateMapperInfo<ThingModel, Thing>("q")
             }.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<User, object>> selectionMapped = selection.MapExpression<User, object>(infoDictionary);
+            Expression<Func<User, object>> selectionMapped = selection.MapExpression<UserModel, User, object>(infoDictionary);
 
             //Assert
             Assert.IsNotNull(selectionMapped);
         }
-
+        
         [TestMethod]
         public void Map_where_method()
         {
@@ -147,12 +148,12 @@ namespace XpressionMapper.Tests
             Expression<Func<UserModel, object>> selection = s => s.AccountModel.ThingModels.Where(x => x.BarModel == s.AccountName);
             Dictionary<Type, MapperInfo> infoDictionary = new List<MapperInfo>
             {
-                selection.CreateMapperInfo<UserModel, User>("p"),//mapping for outer expression must come first
+                selection.CreateMapperInfo<UserModel, User>("p"),
                 selection.CreateMapperInfo<ThingModel, Thing>("q")
             }.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<User, object>> selectionMapped = selection.MapExpression<User, object>(infoDictionary);
+            Expression<Func<User, object>> selectionMapped = selection.MapExpression<UserModel, User, object>(infoDictionary);
 
             //Assert
             Assert.IsNotNull(selectionMapped);
@@ -170,7 +171,7 @@ namespace XpressionMapper.Tests
             }.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<IQueryable<User>, IQueryable<User>>> expMapped = exp.MapExpression<IQueryable<User>, IQueryable<User>>(infoDictionary);
+            Expression<Func<IQueryable<User>, IQueryable<User>>> expMapped = exp.MapExpression<IQueryable<UserModel>, IQueryable<User>, IQueryable<User>>(infoDictionary);
 
             //Assert
             Assert.IsNotNull(expMapped);
