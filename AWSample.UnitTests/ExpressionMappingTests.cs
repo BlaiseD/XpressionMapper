@@ -32,7 +32,7 @@ namespace AWSample.UnitTests
             }.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<BusinessEntityContact, bool>> selectionMapped = selection.MapExpression<BusinessEntityContact, bool>(infoDictionary);
+            Expression<Func<BusinessEntityContact, bool>> selectionMapped = selection.MapExpression<BusinessEntityContactModel, BusinessEntityContact, bool>(infoDictionary);
 
             //Assert
             Assert.IsNotNull(selectionMapped);
@@ -50,7 +50,7 @@ namespace AWSample.UnitTests
             }.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<IQueryable<Person>, IQueryable<Person>>> expMapped = exp.MapExpression<IQueryable<Person>, IQueryable<Person>>(infoDictionary);
+            Expression<Func<IQueryable<Person>, IQueryable<Person>>> expMapped = exp.MapExpression<IQueryable<PersonModel>, IQueryable<Person>, IQueryable<Person>>(infoDictionary);
 
             //Assert
             Assert.IsNotNull(expMapped);
