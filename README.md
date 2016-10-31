@@ -24,9 +24,9 @@
         private IPersonStore store;</p>
 <pre><code>    public ICollection&lt;PersonModel&gt; GetList(Expression&lt;Func&lt;PersonModel, bool&gt;&gt; filter = null, Expression&lt;Func&lt;IQueryable&lt;PersonModel&gt;, IQueryable&lt;PersonModel&gt;&gt;&gt; orderBy = null, ICollection&lt;Expression&lt;Func&lt;PersonModel, object&gt;&gt;&gt; includeProperties = null)
     {
-        Expression&lt;Func&lt;Person, bool&gt;&gt; f = filter.MapExpression&lt;PersonModel, Person, bool&gt;();
-        Expression&lt;Func&lt;IQueryable&lt;Person&gt;, IQueryable&lt;Person&gt;&gt;&gt; mappedOrderBy = orderBy.MapOrderByExpression&lt;PersonModel, Person&gt;();
-        ICollection&lt;Expression&lt;Func&lt;Person, object&gt;&gt;&gt; includes = includeProperties.MapExpressionList&lt;PersonModel, Person, object&gt;();
+        Expression&lt;Func&lt;Person, bool&gt;&gt; f = filter.MapExpression&lt;Func&lt;PersonModel, bool&gt;, Func&lt;Person, bool&gt;&gt;();
+        Expression&lt;Func&lt;IQueryable&lt;Person&gt;, IQueryable&lt;Person&gt;&gt;&gt; mappedOrderBy = orderBy.MapExpression&lt;Func&lt;IQueryable&lt;PersonModel&gt;, IQueryable&lt;PersonModel&gt;&gt;, Func&lt;IQueryable&lt;Person&gt;, IQueryable&lt;Person&gt;&gt;&gt;();
+        ICollection&lt;Expression&lt;Func&lt;Person, object&gt;&gt;&gt; includes = includeProperties.MapExpressionList&lt;Func&lt;PersonModel, object&gt;, Func&lt;Person, object&gt;&gt;();
 
         ICollection&lt;Person&gt; list = store.Get(f, mappedOrderBy == null ? null : mappedOrderBy.Compile(), includes);
         return Mapper.Map&lt;IEnumerable&lt;Person&gt;, IEnumerable&lt;PersonModel&gt;&gt;(list).ToList();
