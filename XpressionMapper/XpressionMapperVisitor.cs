@@ -15,31 +15,40 @@ namespace XpressionMapper
 {
     public class XpressionMapperVisitor : ExpressionVisitor
     {
-        public XpressionMapperVisitor(Dictionary<Type, MapperInfo> infoDictionary)
+        public XpressionMapperVisitor(Dictionary<Type, Type> typeMappings)
         {
-            this.infoDictionary = infoDictionary;
+            this.typeMappings = typeMappings;
+            this.infoDictionary = new MapperInfoDictionary(new ParameterExpressionEqualityComparer());
         }
 
         #region Variables
-        private Dictionary<Type, MapperInfo> infoDictionary;
+        private MapperInfoDictionary infoDictionary;
+        private Dictionary<Type, Type> typeMappings;
         #endregion Variables
 
         #region Properties
-        public Dictionary<Type, MapperInfo> InfoDictionary
+        public MapperInfoDictionary InfoDictionary
         {
             get { return this.infoDictionary; }
+        }
+
+        public Dictionary<Type, Type> TypeMappings
+        {
+            get { return this.typeMappings; }
         }
         #endregion Properties
 
         #region Methods
-        protected override Expression VisitParameter(ParameterExpression parameter)
+        protected override Expression VisitParameter(ParameterExpression parameterExpression)
         {
-            KeyValuePair<Type, MapperInfo> pair = infoDictionary.SingleOrDefault(a => a.Key == parameter.Type);
+            infoDictionary.Add(parameterExpression, this.TypeMappings);
+            KeyValuePair<ParameterExpression, MapperInfo> pair = infoDictionary.SingleOrDefault(a => a.Key.Equals(parameterExpression));
             if (!pair.Equals(default(KeyValuePair<Type, MapperInfo>)))
             {
                 return pair.Value.NewParameter;
             }
-            return base.VisitParameter(parameter);
+
+            return base.VisitParameter(parameterExpression);
         }
 
         protected override Expression VisitMember(MemberExpression node)
@@ -49,8 +58,14 @@ namespace XpressionMapper
 
             string sourcePath = null;
 
-            Type sType = node.GetParameterType();
-            if (sType != null && infoDictionary.ContainsKey(sType) && node.IsMemberExpression())
+            ParameterExpression parameterExpression = node.GetParameterExpression();
+            if (parameterExpression == null)
+                return base.VisitMember(node);
+
+            infoDictionary.Add(parameterExpression, this.TypeMappings);
+
+            Type sType = parameterExpression.Type;
+            if (infoDictionary.ContainsKey(parameterExpression) && node.IsMemberExpression())
             {
                 sourcePath = node.GetPropertyFullName();
             }
@@ -60,7 +75,7 @@ namespace XpressionMapper
             }
 
             List<PropertyMapInfo> propertyMapInfoList = new List<PropertyMapInfo>();
-            FindDestinationFullName(sType, infoDictionary[sType].DestType, sourcePath, propertyMapInfoList);
+            FindDestinationFullName(sType, infoDictionary[parameterExpression].DestType, sourcePath, propertyMapInfoList);
             string fullName = null;
 
             if (propertyMapInfoList[propertyMapInfoList.Count - 1].CustomExpression != null)
@@ -70,14 +85,14 @@ namespace XpressionMapper
 
                 //Get the fullname of the reference object - this means building the reference name from all but the last expression.
                 fullName = BuildFullName(propertyMapInfoList);
-                PrependParentNameVisitor visitor = new PrependParentNameVisitor(infoDictionary[sType].DestType, last.CustomExpression.Parameters[0].Type, fullName, infoDictionary[sType].NewParameter);
+                PrependParentNameVisitor visitor = new PrependParentNameVisitor(infoDictionary[parameterExpression].DestType, last.CustomExpression.Parameters[0].Type/*Parent type of current property*/, fullName, infoDictionary[parameterExpression].NewParameter);
                 Expression ex = visitor.Visit(last.CustomExpression.Body);
                 return ex;
             }
             else
             {
                 fullName = BuildFullName(propertyMapInfoList);
-                MemberExpression me = infoDictionary[sType].NewParameter.BuildExpression(infoDictionary[sType].DestType, fullName);
+                MemberExpression me = infoDictionary[parameterExpression].NewParameter.BuildExpression(infoDictionary[parameterExpression].DestType, fullName);
                 return me;
             }
         }
@@ -108,19 +123,33 @@ namespace XpressionMapper
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            Type sType = node.GetParameterType();
-            if (sType == null || !infoDictionary.ContainsKey(sType))
+            ParameterExpression parameterExpression = node.GetParameterExpression();
+            if (parameterExpression == null)
                 return base.VisitMethodCall(node);
 
+            infoDictionary.Add(parameterExpression, this.TypeMappings);
+
+            bool isExtension = node.Method.IsDefined(typeof(System.Runtime.CompilerServices.ExtensionAttribute), true);
             List<Expression> listOfArgumentsForNewMethod = node.Arguments.Aggregate(new List<Expression>(), (lst, next) =>
             {
-                lst.Add(ArgumentMapper.Create(this, next).MappedArgumentExpression);
+                Expression mappedNext = ArgumentMapper.Create(this, next).MappedArgumentExpression;
+
+                if (isExtension && lst.Count == 0)
+                {
+                    Type typeSource = next.Type.GetUnderlyingGenericType();
+                    Type typeDest = mappedNext.Type.GetUnderlyingGenericType();
+
+                    if (typeSource != null && typeDest != null)
+                        this.TypeMappings.AddTypeMapping(typeSource, typeDest);
+                }
+
+                lst.Add(mappedNext);
                 return lst;
             });//Arguments could be expressions or other objects. e.g. s => s.UserId  or a string "ZZZ".  For extention methods node.Arguments[0] is usually the helper object itself
 
             //type args are the generic type args e.g. T1 and T2 MethodName<T1, T2>(method arguments);
             List<Type> typeArgsForNewMethod = node.Method.IsGenericMethod
-                ? node.Method.GetGenericArguments().ToList().ConvertAll<Type>(i => infoDictionary.ContainsKey(i) ? infoDictionary[i].DestType : i)//not converting the type it is not in the info dictionary
+                ? node.Method.GetGenericArguments().ToList().ConvertAll<Type>(i => typeMappings.ContainsKey(i) ? typeMappings[i] : i)//not converting the type it is not in the typeMappings dictionary
                 : null;
 
             MethodCallExpression resultExp = null;
@@ -144,7 +173,7 @@ namespace XpressionMapper
         #endregion Methods
 
         #region Private Methods
-        private string BuildFullName(List<PropertyMapInfo> propertyMapInfoList)
+        protected string BuildFullName(List<PropertyMapInfo> propertyMapInfoList)
         {
             string fullName = string.Empty;
             foreach (PropertyMapInfo info in propertyMapInfoList)
@@ -166,7 +195,7 @@ namespace XpressionMapper
             return fullName;
         }
 
-        private static void FindDestinationFullName(Type typeSource, Type typeDestination, string sourceFullName, List<PropertyMapInfo> propertyMapInfoList)
+        protected static void FindDestinationFullName(Type typeSource, Type typeDestination, string sourceFullName, List<PropertyMapInfo> propertyMapInfoList)
         {
             const string PERIOD = ".";
             TypeMap typeMap = Mapper.FindTypeMapFor(typeDestination, typeSource);//The destination becomes the source because to map a source expression to a destination expression,

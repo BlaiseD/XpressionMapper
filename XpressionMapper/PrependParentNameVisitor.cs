@@ -34,7 +34,8 @@ namespace XpressionMapper
 
             string sourcePath = null;
 
-            Type sType = node.GetParameterType();
+            ParameterExpression parameterExpression = node.GetParameterExpression();
+            Type sType = parameterExpression == null ? null : parameterExpression.Type;
             if (sType != null && sType == this.CurrentParameterType && node.IsMemberExpression())
             {
                 sourcePath = node.GetPropertyFullName();

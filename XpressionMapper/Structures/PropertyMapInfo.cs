@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace XpressionMapper.Structures
 {
-    internal class PropertyMapInfo
+    public class PropertyMapInfo
     {
         public PropertyMapInfo(LambdaExpression CustomExpression, MemberInfo DestinationPropertyInfo)
         {

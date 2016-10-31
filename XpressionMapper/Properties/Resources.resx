@@ -128,11 +128,24 @@
     <value>The source and destination types must be the same for expression mapping between value types. Source Type: {0}, Source Description: {1}, Destination Type: {2}, Destination Property: {3}.</value>
     <comment>0=Source Type; 1=SourceDescription; 2=Destination Type; 3=Destination Property.</comment>
   </data>
+  <data name="includeExpressionTooComplex" xml:space="preserve">
+    <value>The Include value-type expression uses multiple sibling navigation objects "{0}", "{1}" and is too complex to translate.</value>
+    <comment>0=FirstNavigationProperty, 1=SecondNavigationProperty</comment>
+  </data>
+  <data name="invalidArgumentCount" xml:space="preserve">
+    <value>Source and destination must have the same number of arguments.</value>
+  </data>
   <data name="invalidExpErr" xml:space="preserve">
     <value>Invalid expression type for this operation.</value>
+  </data>
+  <data name="mapperInfoDictionaryIsNull" xml:space="preserve">
+    <value>Mapper Info dictionary cannot be null.</value>
   </data>
   <data name="srcMemberCannotBeNullFormat" xml:space="preserve">
     <value>SourceMember cannot be null. Source Type: {0}, Destination Type: {1}, Property: {2}.</value>
     <comment>0=SorceType; 1=DestinationType; 2=Name of the source property</comment>
+  </data>
+  <data name="typeMappingsDictionaryIsNull" xml:space="preserve">
+    <value>Type Mappings dictionary cannot be null.</value>
   </data>
 </root>

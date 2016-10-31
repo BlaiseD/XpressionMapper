@@ -30,9 +30,9 @@ namespace AWSample.PersonRepository
         #region Methods
         public ICollection<PersonModel> GetList(Expression<Func<PersonModel, bool>> filter = null, Expression<Func<IQueryable<PersonModel>, IQueryable<PersonModel>>> orderBy = null, ICollection<Expression<Func<PersonModel, object>>> includeProperties = null)
         {
-            Expression<Func<AWSample.EF.POCO.Person.Person, bool>> f = filter.MapExpression<PersonModel, AWSample.EF.POCO.Person.Person, bool>();
-            Expression<Func<IQueryable<AWSample.EF.POCO.Person.Person>, IQueryable<AWSample.EF.POCO.Person.Person>>> mappedOrderBy = orderBy.MapOrderByExpression<PersonModel, AWSample.EF.POCO.Person.Person>();
-            ICollection<Expression<Func<AWSample.EF.POCO.Person.Person, object>>> includes = includeProperties.MapExpressionList<PersonModel, AWSample.EF.POCO.Person.Person, object>();
+            Expression<Func<AWSample.EF.POCO.Person.Person, bool>> f = filter.MapExpression<Func<PersonModel, bool>, Func<AWSample.EF.POCO.Person.Person, bool>>();
+            Expression<Func<IQueryable<AWSample.EF.POCO.Person.Person>, IQueryable<AWSample.EF.POCO.Person.Person>>> mappedOrderBy = orderBy.MapExpression<Func<IQueryable<PersonModel>, IQueryable<PersonModel>>, Func<IQueryable<AWSample.EF.POCO.Person.Person>, IQueryable<AWSample.EF.POCO.Person.Person>>>();
+            ICollection<Expression<Func<AWSample.EF.POCO.Person.Person, object>>> includes = includeProperties.MapExpressionList<Func<PersonModel, object>, Func<AWSample.EF.POCO.Person.Person, object>>();
 
             ICollection<AWSample.EF.POCO.Person.Person> list = store.Get(f, mappedOrderBy == null ? null : mappedOrderBy.Compile(), includes);
             return Mapper.Map<IEnumerable<AWSample.EF.POCO.Person.Person>, IEnumerable<PersonModel>>(list).ToList();
@@ -40,7 +40,7 @@ namespace AWSample.PersonRepository
 
         public int Count(Expression<Func<PersonModel, bool>> filter = null)
         {
-            Expression<Func<AWSample.EF.POCO.Person.Person, bool>> f = filter.MapExpression<PersonModel, AWSample.EF.POCO.Person.Person, bool>();
+            Expression<Func<AWSample.EF.POCO.Person.Person, bool>> f = filter.MapExpression<Func<PersonModel, bool>, Func<AWSample.EF.POCO.Person.Person, bool>>();
             return store.Count(f);
         }
 

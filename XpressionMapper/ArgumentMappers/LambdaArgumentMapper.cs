@@ -19,11 +19,10 @@ namespace XpressionMapper.ArgumentMappers
         {
             get
             {
-                Expression exp = ((LambdaExpression)this.argument).Body;
-                Expression ex = this.ExpressionVisitor.Visit(exp);
+                LambdaExpression lambdaExpression = (LambdaExpression)this.argument;
+                Expression ex = this.ExpressionVisitor.Visit(lambdaExpression.Body);
 
-                Type parameterType = this.argument.GetParameterType();
-                LambdaExpression mapped = Expression.Lambda(ex, this.ExpressionVisitor.InfoDictionary[parameterType].NewParameter);
+                LambdaExpression mapped = Expression.Lambda(ex, lambdaExpression.Parameters.GetDestinationParameterExpressions(this.ExpressionVisitor.InfoDictionary));
                 return mapped;
             }
         }

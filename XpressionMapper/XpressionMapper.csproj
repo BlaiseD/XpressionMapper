@@ -53,6 +53,10 @@
     <Compile Include="ArgumentMappers\QuoteArgumentMapper.cs" />
     <Compile Include="Extensions\MapperExtensions.cs" />
     <Compile Include="Extensions\VisitorExtensions.cs" />
+    <Compile Include="FindMemberExpressionsVisitor.cs" />
+    <Compile Include="MapIncludesVisitor.cs" />
+    <Compile Include="MapperInfoDictionary.cs" />
+    <Compile Include="ParameterExpressionEqualityComparer.cs" />
     <Compile Include="XpressionMapperVisitor.cs" />
     <Compile Include="PrependParentNameVisitor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -68,6 +72,7 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

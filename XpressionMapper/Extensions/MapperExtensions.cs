@@ -11,163 +11,186 @@ namespace XpressionMapper.Extensions
     public static class MapperExtensions
     {
         /// <summary>
-        /// Maps an expression given a source type, destination type and result type.
+        /// Maps an expression given a dictionary of types where the source type is the key and the destination ttype is the value.
         /// </summary>
-        /// <typeparam name="TSource"></typeparam>
-        /// <typeparam name="TDestination"></typeparam>
-        /// <typeparam name="TResult"></typeparam>
+        /// <typeparam name="TSourceDelegate"></typeparam>
+        /// <typeparam name="TDestDelegate"></typeparam>
         /// <param name="expression"></param>
-        /// <param name="parameterName"></param>
+        /// <param name="infoDictionary"></param>
         /// <returns></returns>
-        public static Expression<Func<TDestination, TResult>> MapExpression<TSource, TDestination, TResult>(this Expression<Func<TSource, TResult>> expression, string parameterName = "item")
-            where TSource : class
-            where TDestination : class
+        public static Expression<TDestDelegate> MapExpression<TSourceDelegate, TDestDelegate>(this Expression<TSourceDelegate> expression, IDictionary<Type, Type> typeMappings = null)
         {
             if (expression == null)
                 return null;
 
-            Dictionary<Type, MapperInfo> infoDictionary = new List<MapperInfo>
-            {
-                expression.CreateMapperInfo<TSource, TDestination>(parameterName)
-            }.ToDictionary(i => i.SourceType);
+            Dictionary<Type, Type> alltypeMappings = new Dictionary<Type, Type>()
+                                                .AddTypeMappingsFromDelegates<TSourceDelegate, TDestDelegate>()
+                                                .AddTypeMappingRange(typeMappings);
 
-            XpressionMapperVisitor visitor = new XpressionMapperVisitor(infoDictionary);
-            var remappedBody = visitor.Visit(expression.Body);
-            if (remappedBody == null)
-                throw new InvalidOperationException(Properties.Resources.cantRemapExpression);
-
-            return Expression.Lambda<Func<TDestination, TResult>>(remappedBody, infoDictionary[typeof(TSource)].NewParameter);
-        }
-
-        /// <summary>
-        /// Maps an expression given a dictionary of MapperInfo items with the source type as the key.
-        /// </summary>
-        /// <typeparam name="TDestination">Destination parameter type</typeparam>
-        /// <typeparam name="TDestinationResult">Result of the destination lambda function</typeparam>
-        /// <param name="expression">the expression</param>
-        /// <param name="infoDictionary">A dictionary containing the list of paramters to be mapped</param>
-        /// <returns></returns>
-        public static Expression<Func<TDestination, TDestinationResult>> MapExpression<TSource, TDestination, TDestinationResult>(this LambdaExpression expression, Dictionary<Type, MapperInfo> infoDictionary)
-        {
-            if (expression == null)
-                return null;
-
-            XpressionMapperVisitor visitor = new XpressionMapperVisitor(infoDictionary);
+            XpressionMapperVisitor visitor = new XpressionMapperVisitor(alltypeMappings);
             Expression remappedBody = visitor.Visit(expression.Body);
             if (remappedBody == null)
                 throw new InvalidOperationException(Properties.Resources.cantRemapExpression);
 
-            return Expression.Lambda<Func<TDestination, TDestinationResult>>(remappedBody, infoDictionary[typeof(TSource)].NewParameter);
+            return Expression.Lambda<TDestDelegate>(remappedBody, expression.GetParameterExpressions(visitor.InfoDictionary));
         }
 
         /// <summary>
-        /// Maps a collection of expressions given a source type, destination type and result type.
+        /// Maps an expression to be used as an "Include" given a dictionary of types where the source type is the key and the destination ttype is the value.
         /// </summary>
         /// <typeparam name="TSource"></typeparam>
         /// <typeparam name="TDestination"></typeparam>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="collection"></param>
-        /// <param name="parameterName"></param>
+        /// <typeparam name="TDestinationResult"></typeparam>
+        /// <param name="expression"></param>
+        /// <param name="infoDictionary"></param>
         /// <returns></returns>
-        public static ICollection<Expression<Func<TDestination, TResult>>> MapExpressionList<TSource, TDestination, TResult>(this ICollection<Expression<Func<TSource, TResult>>> collection, string parameterName = "item")
-            where TSource : class
-            where TDestination : class
+        public static Expression<TDestDelegate> MapExpressionAsInclude<TSourceDelegate, TDestDelegate>(this Expression<TSourceDelegate> expression, IDictionary<Type, Type> typeMappings = null)
         {
-            if (collection == null)
+            if (expression == null)
                 return null;
 
-            return collection.ToList().ConvertAll<Expression<Func<TDestination, TResult>>>(item => item.MapExpression<TSource, TDestination, TResult>(parameterName));
+            Dictionary<Type, Type> alltypeMappings = new Dictionary<Type, Type>()
+                                                .AddTypeMappingsFromDelegates<TSourceDelegate, TDestDelegate>()
+                                                .AddTypeMappingRange(typeMappings);
+
+            XpressionMapperVisitor visitor = new MapIncludesVisitor(alltypeMappings);
+            Expression remappedBody = visitor.Visit(expression.Body);
+            if (remappedBody == null)
+                throw new InvalidOperationException(Properties.Resources.cantRemapExpression);
+
+            return Expression.Lambda<TDestDelegate>(remappedBody, expression.GetParameterExpressions(visitor.InfoDictionary));
         }
 
         /// <summary>
-        /// Maps a collection of expressions given a dictionary of MapperInfo items with the source type as the key.
+        /// Maps a collection of expressions given a dictionary of types where the source type is the key and the destination ttype is the value.
         /// </summary>
-        /// <typeparam name="TSource"></typeparam>
-        /// <typeparam name="TDestination"></typeparam>
-        /// <typeparam name="TResult"></typeparam>
+        /// <typeparam name="TSourceDelegate"></typeparam>
+        /// <typeparam name="TDestDelagate"></typeparam>
         /// <param name="collection"></param>
         /// <param name="infoDictionary"></param>
-        /// <param name="parameterName"></param>
         /// <returns></returns>
-        public static ICollection<Expression<Func<TDestination, TResult>>> MapExpressionList<TSource, TDestination, TResult>(this ICollection<Expression<Func<TSource, TResult>>> collection, Dictionary<Type, MapperInfo> infoDictionary)
-            where TDestination : class
+        public static ICollection<Expression<TDestDelagate>> MapExpressionList<TSourceDelegate, TDestDelagate>(this ICollection<Expression<TSourceDelegate>> collection, IDictionary<Type, Type> typeMappings = null)
         {
             if (collection == null)
                 return null;
 
-            return collection.ToList().ConvertAll<Expression<Func<TDestination, TResult>>>(item => item.MapExpression<TSource, TDestination, TResult>(infoDictionary));
+            return collection.ToList().ConvertAll<Expression<TDestDelagate>>(item => item.MapExpression<TSourceDelegate, TDestDelagate>(typeMappings));
         }
 
         /// <summary>
-        /// Initializes a MapperInfo object given the parameter name with the source and destination types as generic arguments.
+        /// Maps a collection of expressions to be used as a "Includes" given a dictionary of types where the source type is the key and the destination ttype is the value.
         /// </summary>
-        /// <typeparam name="TSource">Source type</typeparam>
-        /// <typeparam name="TDest">Destination type</typeparam>
-        /// <param name="expression">The expression</param>
-        /// <param name="parameterName">The parameter name.</param>
+        /// <typeparam name="TSourceDelegate"></typeparam>
+        /// <typeparam name="TDestDelagate"></typeparam>
+        /// <param name="collection"></param>
+        /// <param name="infoDictionary"></param>
         /// <returns></returns>
-        public static MapperInfo CreateMapperInfo<TSource, TDest>(this LambdaExpression expression, string parameterName)
-            where TSource : class
-            where TDest : class
+        public static ICollection<Expression<TDestDelagate>> MapIncludesList<TSourceDelegate, TDestDelagate>(this ICollection<Expression<TSourceDelegate>> collection, IDictionary<Type, Type> typeMappings = null)
         {
-            ParameterExpression newParameter = Expression.Parameter(typeof(TDest), parameterName);
-            return new MapperInfo(newParameter, typeof(TSource), typeof(TDest));
+            if (collection == null)
+                return null;
+
+            return collection.ToList().ConvertAll<Expression<TDestDelagate>>(item => item.MapExpressionAsInclude<TSourceDelegate, TDestDelagate>(typeMappings));
         }
 
         /// <summary>
-        /// Initializes a MapperInfo object given the parameter name and source and destination types.
+        /// Takes a list of parameters from the source lamda expression and returns a list of parameters for the destination lambda expression.
         /// </summary>
-        /// <param name="expression"></param>
+        /// <param name="sourceExpressions"></param>
+        /// <param name="infoDictionary"></param>
+        /// <returns></returns>
+        public static List<ParameterExpression> GetDestinationParameterExpressions(this IEnumerable<ParameterExpression> sourceExpressions, Dictionary<ParameterExpression, MapperInfo> infoDictionary)
+        {
+            return sourceExpressions.ToList().ConvertAll<ParameterExpression>(p => infoDictionary[p].NewParameter);
+        }
+
+        /// <summary>
+        /// Adds a new source and destination key-value pair to a dictionary of type mappings based on the generic arguments.
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <typeparam name="TDest"></typeparam>
+        /// <param name="typeMappings"></param>
+        /// <returns></returns>
+        public static Dictionary<Type, Type> AddTypeMapping<TSource, TDest>(this Dictionary<Type, Type> typeMappings)
+        {
+            if (typeMappings == null)
+                throw new ArgumentException(Properties.Resources.typeMappingsDictionaryIsNull);
+
+            Type sourceType = typeof(TSource);
+            Type destType = typeof(TDest);
+
+            if (!typeMappings.ContainsKey(sourceType) && sourceType != destType)
+                typeMappings.Add(sourceType, destType);
+
+            return typeMappings;
+        }
+
+        /// <summary>
+        /// Adds a new source and destination key-value pair to a dictionary of type mappings based on the arguments.
+        /// </summary>
+        /// <param name="typeMappings"></param>
         /// <param name="sourceType"></param>
         /// <param name="destType"></param>
-        /// <param name="parameterName"></param>
         /// <returns></returns>
-        public static MapperInfo CreateMapperInfo(this LambdaExpression expression, Type sourceType, Type destType, string parameterName)
+        public static Dictionary<Type, Type> AddTypeMapping(this Dictionary<Type, Type> typeMappings, Type sourceType, Type destType)
         {
-            ParameterExpression newParameter = Expression.Parameter(destType, parameterName);
-            return new MapperInfo(newParameter, sourceType, destType);
+            if (typeMappings == null)
+                throw new ArgumentException(Properties.Resources.typeMappingsDictionaryIsNull);
+
+            if (!typeMappings.ContainsKey(sourceType) && sourceType != destType)
+                typeMappings.Add(sourceType, destType);
+
+            return typeMappings;
         }
 
         /// <summary>
-        /// Returns a dictionary of mapper info objects for mapping expressions.
+        /// Adds a range of new source and destination key-value pairs to an existing dictionary.
         /// </summary>
-        /// <param name="expression"></param>
-        /// <param name="sourceDestTypes">A Collection of tupless where the source type is Items, the destination type is Item2 and the parameter name is Item3.</param>
+        /// <param name="typeMappings"></param>
+        /// <param name="range"></param>
         /// <returns></returns>
-        public static Dictionary<Type, MapperInfo> CreateMapperInfoDictionary(this LambdaExpression expression, ICollection<Tuple<Type, Type, string>> sourceDestTypes)
+        public static Dictionary<Type, Type> AddTypeMappingRange(this Dictionary<Type, Type> typeMappings, IDictionary<Type, Type> range)
         {
-            return sourceDestTypes.Aggregate(new Dictionary<Type, MapperInfo>(), (dic, next) =>
+            if (typeMappings == null)
+                throw new ArgumentException(Properties.Resources.typeMappingsDictionaryIsNull);
+
+            if (range == null)
+                return typeMappings;
+
+            return range.Aggregate(typeMappings, (dic, next) =>
             {
-                dic.Add(next.Item1, expression.CreateMapperInfo(next.Item1, next.Item2, next.Item3));
+                if (!dic.ContainsKey(next.Key) && next.Key != next.Value)
+                    dic.Add(next.Key, next.Value);
+
                 return dic;
             });
         }
 
-        /// <summary>
-        /// Returns an OrderBy Func for type TDest given an OrderBy Expression of type TSource
-        /// </summary>
-        /// <typeparam name="TSource"></typeparam>
-        /// <typeparam name="TDest"></typeparam>
-        /// <param name="orderByExpression"></param>
-        /// <param name="innerParameterName"></param>
-        /// <param name="outerParameterName"></param>
-        /// <returns></returns>
-        public static Expression<Func<IQueryable<TDest>, IQueryable<TDest>>> MapOrderByExpression<TSource, TDest>(this Expression<Func<IQueryable<TSource>, IQueryable<TSource>>> orderByExpression, string innerParameterName = "p", string outerParameterName = "q")
-            where TSource : class
-            where TDest : class
+        #region Private Methods
+        private static Dictionary<Type, Type> AddTypeMappingsFromDelegates<TSourceDelegate, TDestDelegate>(this Dictionary<Type, Type> typeMappings)
         {
-            if (orderByExpression == null)
-                return null;
+            if (typeMappings == null)
+                throw new ArgumentException(Properties.Resources.typeMappingsDictionaryIsNull);
 
-            Dictionary<Type, MapperInfo> infoDictionary = new List<MapperInfo>
-                {
-                    orderByExpression.CreateMapperInfo<IQueryable<TSource>, IQueryable<TDest>>(outerParameterName),//mapping for outer expression must come first
-                    orderByExpression.CreateMapperInfo<TSource, TDest>(innerParameterName)
-                }.ToDictionary(i => i.SourceType);
+            List<Type> sourceArguments = typeof(TSourceDelegate).GetGenericArguments().ToList();
+            List<Type> destArguments = typeof(TDestDelegate).GetGenericArguments().ToList();
 
-            Expression<Func<IQueryable<TDest>, IQueryable<TDest>>> mappedOrderBy = orderByExpression.MapExpression<IQueryable<TSource>, IQueryable<TDest>, IQueryable<TDest>>(infoDictionary);
+            if (sourceArguments.Count != destArguments.Count)
+                throw new ArgumentException(Properties.Resources.invalidArgumentCount);
 
-            return mappedOrderBy;
+            return sourceArguments.Aggregate(typeMappings, (dic, next) =>
+            {
+                if (!dic.ContainsKey(next) && next != destArguments[sourceArguments.IndexOf(next)])
+                    dic.AddTypeMapping(next, destArguments[sourceArguments.IndexOf(next)]);
+
+                return dic;
+            });
         }
+
+        private static List<ParameterExpression> GetParameterExpressions(this LambdaExpression expression, Dictionary<ParameterExpression, MapperInfo> infoDictionary)
+        {
+            return expression.Parameters.ToList().ConvertAll<ParameterExpression>(p => infoDictionary[p].NewParameter);
+        }
+        #endregion Private Methods
     }
 }

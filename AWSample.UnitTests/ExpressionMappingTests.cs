@@ -26,13 +26,13 @@ namespace AWSample.UnitTests
         {
             //Arrange
             Expression<Func<BusinessEntityContactModel, bool>> selection = s => s != null && s.Person.FullName.StartsWith("A");
-            Dictionary<Type, MapperInfo> infoDictionary = new List<MapperInfo>
-            {
-                selection.CreateMapperInfo<BusinessEntityContactModel, BusinessEntityContact>("p")
-            }.ToDictionary(i => i.SourceType);
+            //Dictionary<Type, MapperInfo> infoDictionary = new List<MapperInfo>
+            //{
+            //    selection.CreateMapperInfo<BusinessEntityContactModel, BusinessEntityContact>("p")
+            //}.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<BusinessEntityContact, bool>> selectionMapped = selection.MapExpression<BusinessEntityContactModel, BusinessEntityContact, bool>(infoDictionary);
+            Expression<Func<BusinessEntityContact, bool>> selectionMapped = selection.MapExpression<Func<BusinessEntityContactModel, bool>, Func<BusinessEntityContact, bool>>();
 
             //Assert
             Assert.IsNotNull(selectionMapped);
@@ -43,14 +43,14 @@ namespace AWSample.UnitTests
         {
             //Arrange
             Expression<Func<IQueryable<PersonModel>, IQueryable<PersonModel>>> exp = q => q.OrderBy(s => s.BusinessEntityID).ThenBy(s => s.FullName);
-            Dictionary<Type, MapperInfo> infoDictionary = new List<MapperInfo>
-            {
-                exp.CreateMapperInfo<IQueryable<PersonModel>, IQueryable<Person>>("q"),//mapping for outer expression must come first
-                exp.CreateMapperInfo<PersonModel, Person>("p")
-            }.ToDictionary(i => i.SourceType);
+            //Dictionary<Type, MapperInfo> infoDictionary = new List<MapperInfo>
+            //{
+            //    exp.CreateMapperInfo<IQueryable<PersonModel>, IQueryable<Person>>("q"),//mapping for outer expression must come first
+            //    exp.CreateMapperInfo<PersonModel, Person>("p")
+            //}.ToDictionary(i => i.SourceType);
 
             //Act
-            Expression<Func<IQueryable<Person>, IQueryable<Person>>> expMapped = exp.MapExpression<IQueryable<PersonModel>, IQueryable<Person>, IQueryable<Person>>(infoDictionary);
+            Expression<Func<IQueryable<Person>, IQueryable<Person>>> expMapped = exp.MapExpression<Func<IQueryable<PersonModel>, IQueryable<PersonModel>>, Func<IQueryable<Person>, IQueryable<Person>>>();
 
             //Assert
             Assert.IsNotNull(expMapped);
